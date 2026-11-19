@@ -9,8 +9,17 @@ English Practice App for Win-x64
 安装完毕后，验证是否安装成功：uv --version  
 使用命令查看当前可用的 Python 版本：uv python list  
 推荐安装特定版本（3.12）：uv python install 3.12  
-在当前项目目录下创建名为 .venv 的虚拟环境：uv venv  
-安装运行库，需要用到的是：faster-whisper edge-tts requests sounddevice soundfile pygame numpy  
+
+在当前目录创建名为 .venv 的虚拟环境：uv venv
+
+激活虚拟环境  
+macOS / Linux：source .venv/bin/activate  
+Windows（PowerShell）：.venv\Scripts\activate  
+退出虚拟环境：deactivate  
+##日常开发中可以使用 uv run 直接运行脚本，无需手动激活虚拟环境。  
+
+在当前项目目录下初始化项目：uv init  
+安装运行库，需要用到的是：faster-whisper edge-tts requests sounddevice soundfile pygame numpy。  
 使用命令：uv pip install -r requirements.txt  
 
 
