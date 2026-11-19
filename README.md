@@ -23,5 +23,6 @@ deactivate
 启动项目：uv run english_talking_gui_win.py  
 
 运行界面展示：
+<img width="1506" height="1007" alt="屏幕截图 2026-11-19 103733" src="https://github.com/user-attachments/assets/da72c5df-4c5c-4ca5-9755-10b42efe6d30" />
 
-<img width="1867" height="996" alt="UI_show" src="https://github.com/user-attachments/assets/d1211300-3c3e-4683-be62-783e4cb4101e" />
+
