@@ -1,10 +1,10 @@
 English Practice App for Win-x64
 
 
-推荐使用 uv 管理python包及运行环境
-在 Windows 上，使用 Winget：winget install uv
-在 macOS 上，使用 Homebrew：brew install uv
-在 Linux 上，使用官方安装脚本：curl -LsSf https://astral.sh/uv/install.sh | sh
+推荐使用 uv 管理python包及运行环境 /
+在 Windows 上，使用 Winget：winget install uv /
+在 macOS 上，使用 Homebrew：brew install uv /
+在 Linux 上，使用官方安装脚本：curl -LsSf https://astral.sh/uv/install.sh | sh /
 
 安装完毕后，验证是否安装成功：uv --version
 使用命令查看当前可用的 Python 版本：uv python list
