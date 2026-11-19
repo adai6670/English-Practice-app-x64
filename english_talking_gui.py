@@ -37,7 +37,9 @@ LLAMA_SERVER_URL = "http://127.0.0.1:8080/v1/chat/completions"
 TTS_VOICE = "en-US-JennyNeural"
 
 INPUT_AUDIO = "test_audio.wav"
-OUTPUT_AUDIO = "output_response.mp3"
+# MP3 文件固定保存在 Python 程序所在目录
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_AUDIO = os.path.join(BASE_DIR, "output_response.mp3")
 
 SAMPLE_RATE = 16000
 CHANNELS = 1
@@ -155,6 +157,7 @@ class EnglishTalkingApp:
         self.events = queue.Queue()
         self.busy = False
         self.recording = False
+        self.replaying = False
         self.audio_stream = None
         self.audio_chunks = []
         self.audio_lock = threading.Lock()
@@ -186,13 +189,32 @@ class EnglishTalkingApp:
 
         controls = tk.Frame(root, padx=12, pady=8)
         controls.pack(fill="x")
+        # 开始录音 按钮
         self.record_button = tk.Button(
             controls, text="🎙 开始录音", font=("Microsoft YaHei UI", 12),
             height=2, width=18, command=self.toggle_recording, state="disabled"
         )
         self.record_button.pack(side="left")
-        tk.Button(controls, text="清空对话", command=self.clear_chat).pack(side="left", padx=8)
-        tk.Button(controls, text="重置对话上下文", command=self.reset_history).pack(side="left")
+       # 重播纠错 按钮
+        self.replay_button = tk.Button(
+            controls,
+            text="🔊 重播纠错",
+            command=self.replay_response,
+            font=("Microsoft YaHei UI", 10)
+        )
+        self.replay_button.pack(side="left", padx=8)
+        # 清空对话 按钮
+        tk.Button(
+            controls,
+            text="清空对话",
+            command=self.clear_chat
+        ).pack(side="left", padx=8)
+        # 重置对话上下文 按钮
+        tk.Button(
+            controls,
+            text="重置对话上下文",
+            command=self.reset_history
+        ).pack(side="left")
         tk.Label(
             controls,
             text="点击开始录音，再次点击结束；处理完成并播放后可继续下一轮。",
@@ -209,6 +231,36 @@ class EnglishTalkingApp:
         self.chat.insert("end", f"{text}\n\n")
         self.chat.configure(state="disabled")
         self.chat.see("end")
+    
+    def replay_response(self):
+        """重播上一次 AI 英语纠错语音"""
+        if self.busy or self.recording or self.replaying:
+            return
+        if not os.path.isfile(OUTPUT_AUDIO):
+            messagebox.showinfo(
+                "无法重播",
+                "尚未生成语音文件 output_response.mp3！"
+            )
+            return
+        self.replaying = True
+        self.replay_button.configure(state="disabled")
+        self.set_status("正在重播上一次 AI 英语回复...")
+        threading.Thread(
+            target=self._replay_worker,
+            daemon=True
+        ).start()
+
+    def _replay_worker(self):
+        """后台播放，避免界面卡顿"""
+        try:
+            self.play_audio_blocking(OUTPUT_AUDIO)
+        except Exception as exc:
+            self.events.put((
+                "error",
+                f"重播失败：{type(exc).__name__}: {exc}"
+            ))
+        finally:
+            self.events.put(("replay_done", None))
 
     def clear_chat(self):
         if self.busy or self.recording:
@@ -242,7 +294,7 @@ class EnglishTalkingApp:
             self.events.put(("error", f"Whisper 模型加载失败：{exc}"))
 
     def toggle_recording(self):
-        if self.busy:
+        if self.busy or self.replaying:
             return
         if not self.recording:
             self.begin_recording()
@@ -382,6 +434,10 @@ class EnglishTalkingApp:
                 elif kind == "turn_done":
                     self.busy = False
                     self.record_button.configure(text="🎙 开始录音", state="normal")
+                elif kind == "replay_done":
+                    self.replaying = False
+                    self.replay_button.configure(state="normal")
+                    self.set_status("重播完成，可以继续练习。")
         except queue.Empty:
             pass
         self.root.after(100, self.poll_events)
