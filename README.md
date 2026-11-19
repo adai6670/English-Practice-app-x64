@@ -19,7 +19,7 @@ deactivate
   
 安装运行库，需要用到的是：faster-whisper edge-tts requests sounddevice soundfile pygame numpy。  
 使用命令：uv pip install -r requirements.txt  
-确认已安装的包：uv pip list
+确认已安装的包：uv pip list  
 启动项目：uv run english_talking_gui_win.py  
 
 运行界面展示：
