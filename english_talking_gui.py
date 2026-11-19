@@ -7,6 +7,19 @@ import time
 import tkinter as tk
 from tkinter import messagebox, scrolledtext, filedialog
 
+# ===== PyAV 19.0.2 兼容性修复 =====
+import av
+
+_original_av_open = av.open
+
+def av_open_compat(*args, **kwargs):
+    # PyAV 19 不再支持 metadata_errors 参数
+    kwargs.pop("metadata_errors", None)
+    return _original_av_open(*args, **kwargs)
+
+av.open = av_open_compat
+# ===== 兼容性修复结束 =====
+
 import edge_tts
 import requests
 import sounddevice as sd
