@@ -1,4 +1,4 @@
-English Practice App for Win-x64
+English Practice App for win/ubuntu-x64
 
 
 推荐使用 uv 管理python包及运行环境，在shell中操作。  
