@@ -24,7 +24,7 @@ deactivate
 启动项目：uv run english_talking_gui_win.py  
 （ubuntu 测试环境是 26.04.1 LTS，原始系统缺少 PortAudio 底层库‌，sounddevice 是 Python 封装，它依赖系统级的 PortAudio 动态库才能工作，光 pip install sounddevice 包是不够的，需安装系统依赖 sudo apt-get update及sudo apt-get install portaudio19-dev）  
 
-运行界面展示：
+运行界面展示：  
 <img width="600" height="400" alt="屏幕截图 2026-11-19 103733" src="https://github.com/user-attachments/assets/da72c5df-4c5c-4ca5-9755-10b42efe6d30" />
 
 
