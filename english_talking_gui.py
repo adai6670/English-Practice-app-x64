@@ -207,13 +207,15 @@ class EnglishTalkingApp:
         tk.Button(
             controls,
             text="清空对话",
-            command=self.clear_chat
+            command=self.clear_chat,
+            font=("Microsoft YaHei UI", 10)
         ).pack(side="left", padx=8)
         # 重置对话上下文 按钮
         tk.Button(
             controls,
             text="重置对话上下文",
-            command=self.reset_history
+            command=self.reset_history,
+            font=("Microsoft YaHei UI", 10)
         ).pack(side="left")
         tk.Label(
             controls,
