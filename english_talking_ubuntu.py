@@ -50,7 +50,8 @@ AUDIO_DTYPE = "int16"
 # 可选：将你自己的 llama-server 启动命令写入这里。
 # 留空时，点击“启动 llama-server”会弹出输入框，你可以临时填写完整命令。
 LLAMA_SERVER_COMMAND = r"""
-printf '使用方法: 使用 ls 命令，启动 1-llama_ubuntu.sh 请保持终端运行直至程序运行结束\n'
+echo "使用方法: 启动 1-llama_ubuntu.sh，并保持终端窗口运行直至程序运行结束"
+read dummy
 """.strip()
 
 
