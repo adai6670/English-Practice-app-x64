@@ -1,6 +1,6 @@
 English Practice App for win/ubuntu-x64
 
-一款基于AI语音对话的英语口语练习小程序。
+一款基于AI语音对话的英语口语练习小程序。  
 
 推荐使用 uv 管理python包及运行环境，在shell中操作。  
 在 Windows 上，使用 Winget：winget install uv  
