@@ -18,9 +18,11 @@ deactivate
 ##日常开发中可以使用 uv run 直接运行脚本，无需手动激活虚拟环境。  
   
 安装运行库，需要用到的是：faster-whisper edge-tts requests sounddevice soundfile pygame numpy。  
-使用命令：uv pip install -r requirements.txt  
+使用命令：uv pip install faster-whisper edge-tts requests sounddevice soundfile pygame numpy  
+亦可使用命令：uv pip install -r requirements.txt  
 确认已安装的包：uv pip list  
 启动项目：uv run english_talking_gui_win.py  
+（ubuntu 测试环境是 26.04.1 LTS，原始系统缺少 PortAudio 底层库‌，sounddevice 是 Python 封装，它依赖系统级的 PortAudio 动态库才能工作，光 pip install sounddevice 包是不够的，安装系统依赖 sudo apt-get update及sudo apt-get install portaudio19-dev）  
 
 运行界面展示：
 <img width="1506" height="1007" alt="屏幕截图 2026-11-19 103733" src="https://github.com/user-attachments/assets/da72c5df-4c5c-4ca5-9755-10b42efe6d30" />
