@@ -2,9 +2,12 @@
 https://github.com/ggml-org/llama.cpp/releases
 可以选择cuda版或者其他版本，文件夹有变更，需同步修改llama_start.sh文件
 
-启动llama-sever出错，需要建立软连接
-ln -sf libggml-base.so.1.0.0 libggml-base.so.1
-ln -sf libggml.so.1.0.0 libggml.so.1
+首次启动llama-sever会出错，主要原因是系统读取lib文件与实际文件名有差别
+列如./llama-server --version
+./llama-server: error while loading shared libraries: libllama-common.so.1: cannot open shared object file: No such file or directory
+此时需要补齐以下软连接：
 ln -sf libllama-common.so.1.0.0 libllama-common.so.1
-ln -sf libllama.so.1.0.0 libllama.so.1
 ln -sf libmtmd.so.1.0.0 libmtmd.so.1
+ln -sf libllama.so.1.0.0 libllama.so.1
+ln -sf libggml.so.1.0.0 libggml.so.1
+ln -sf libggml-base.so.1.0.0 libggml-base.so.1
