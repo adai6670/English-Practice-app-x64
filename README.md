@@ -9,7 +9,7 @@
 安装完毕后，验证是否安装成功：uv --version  
 使用命令查看当前可用的 Python 版本：uv python list  
 推荐的 python 版本（3.12）：uv python install 3.12  
-shell进入项目目录，创建名为 .venv 的虚拟环境：uv venv --python 3.12  
+shell进入项目目录，创建名为 .venv 的虚拟环境：uv venv  
   
 *激活虚拟环境*  
 macOS / Linux：source .venv/bin/activate  
