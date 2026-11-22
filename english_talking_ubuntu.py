@@ -412,17 +412,16 @@ class EnglishTalkingApp:
         try:
             # ===== Ubuntu：用系统图形终端弹出独立 shell 窗口 =====
             # (终端名, 参数前缀)；gnome-terminal 等需要 "--" 分隔选项与命令
-            wrapped = f'{command}\necho\necho "按回车键关闭此窗口..."\nread -r _'
             
             terminals = [
-                ("gnome-terminal",      ["--", "bash", "-c", wrapped]),
-                ("konsole",             ["-e", "bash", "-c", wrapped]),
-                ("xfce4-terminal",      ["-e", f'bash -c {shlex.quote(wrapped)}']),
-                ("mate-terminal",       ["--", "bash", "-c", wrapped]),
-                ("tilix",               ["-e", "bash", "-c", wrapped]),
-                ("lxterminal",          ["-e", "bash", "-c", wrapped]),
-                ("konsole",             ["-e", "bash", "-c", wrapped]),
-                ("xterm",               ["-e", "bash", "-c", wrapped]),
+                ("gnome-terminal",      ["--", "bash"]),
+                ("konsole",             ["-e", "bash"]),
+                ("xfce4-terminal",      ["-e", "bash"]),
+                ("mate-terminal",       ["--", "bash"]),
+                ("tilix",               ["-e", "bash"]),
+                ("lxterminal",          ["-e", "bash"]),
+                ("konsole",             ["-e", "bash"]),
+                ("xterm",               ["-e", "bash"]),
             ]
             launched = False
             for term, flags in terminals:
