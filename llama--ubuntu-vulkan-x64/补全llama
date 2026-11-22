@@ -2,8 +2,9 @@
 https://github.com/ggml-org/llama.cpp/releases
 可以选择cuda版或者其他版本，文件夹有变更，需同步修改llama_start.sh文件
 
-首次启动llama-sever会出错，主要原因是系统读取lib文件与实际文件名有差别
-列如./llama-server --version
+##如果启动llama-sever报错，主要是有关于文件夹内已存在的lib文件##
+主要原因是系统读取lib文件与实际文件名有差别，程序没有自动补齐软连接
+列如./llama-server -h
 ./llama-server: error while loading shared libraries: libllama-common.so.1: cannot open shared object file: No such file or directory
 此时需要补齐以下软连接：
 ln -sf libllama-common.so.1.0.0 libllama-common.so.1
@@ -11,3 +12,14 @@ ln -sf libmtmd.so.1.0.0 libmtmd.so.1
 ln -sf libllama.so.1.0.0 libllama.so.1
 ln -sf libggml.so.1.0.0 libggml.so.1
 ln -sf libggml-base.so.1.0.0 libggml-base.so.1
+
+##如果启动llama-sever报错，关于支持ssl的lib文件##
+主要原因是系统里没有 libssl.so.3 这个共享库，或者库路径没配置好‌。llama-server 运行时需要 OpenSSL 3.x 提供的这个库，但系统找不到它。
+列如./llama-server -h
+./llama-server: error while loading shared libraries: libssl.so.3: cannot open shared object file: No such file or directory
+此时需要按下面顺序排查
+1.先确认库是否真的存在
+sudo find / -name libssl.so.3
+能找到文件，说明库在但路径不对，跳到“配置库路径”。
+2.找不到文件，说明系统没装 OpenSSL 3.x，就安装：
+sudo apt update && sudo apt install libssl3
