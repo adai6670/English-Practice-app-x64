@@ -50,7 +50,7 @@ AUDIO_DTYPE = "int16"
 # 可选：将你自己的 llama-server 启动命令写入这里。
 # 留空时，点击“启动 llama-server”会弹出输入框，你可以临时填写完整命令。
 LLAMA_SERVER_COMMAND = r"""
-echo 使用方法: 启动 1-llama_win.cmd ，并保持命令窗口运行直至程序运行结束
+echo 使用方法: 启动 1-llama_win.bat ，并保持命令窗口运行直至程序运行结束
 pause
 """.strip()
 
