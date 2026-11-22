@@ -1,10 +1,52 @@
 import asyncio
 import os
 import queue
+import shutil
 import subprocess
+import tempfile
 import threading
 import time
+
+# ===== 在导入 tkinter 之前注入本地 fonts/ 目录到 Fontconfig =====
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FONTS_DIR = os.path.join(BASE_DIR, "fonts")
+
+def setup_local_fonts_for_tk(fonts_dir: str):
+    """为当前进程创建临时 Fontconfig 配置，使 Tk 能够扫描项目本地 fonts/ 下的字体文件。"""
+    if not os.path.isdir(fonts_dir):
+        return None
+    has_font = any(
+        name.lower().endswith((".ttf", ".otf", ".ttc"))
+        for name in os.listdir(fonts_dir)
+    )
+    if not has_font:
+        return None
+
+    tmp_dir = tempfile.mkdtemp(prefix="tk_fonts_")
+    conf_path = os.path.join(tmp_dir, "fonts.conf")
+    cache_dir = os.path.join(tmp_dir, "cache")
+    os.makedirs(cache_dir, exist_ok=True)
+
+    # 继承系统默认规则并追加本地 fonts 目录，同时把缓存写到临时目录避免污染系统缓存
+    conf_xml = f"""<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
+  <dir>{os.path.abspath(fonts_dir)}</dir>
+  <cachedir>{os.path.abspath(cache_dir)}</cachedir>
+</fontconfig>
+"""
+    with open(conf_path, "w", encoding="utf-8") as f:
+        f.write(conf_xml)
+
+    os.environ["FONTCONFIG_FILE"] = conf_path
+    return tmp_dir
+
+
+_TK_FONT_TMP_DIR = setup_local_fonts_for_tk(FONTS_DIR)
+
 import tkinter as tk
+import tkinter.font as tkfont
 from tkinter import messagebox, scrolledtext, filedialog
 
 # ===== PyAV 19.0.2 兼容性修复 =====
@@ -12,10 +54,12 @@ import av
 
 _original_av_open = av.open
 
+
 def av_open_compat(*args, **kwargs):
     # PyAV 19 不再支持 metadata_errors 参数
     kwargs.pop("metadata_errors", None)
     return _original_av_open(*args, **kwargs)
+
 
 av.open = av_open_compat
 # ===== 兼容性修复结束 =====
@@ -25,12 +69,9 @@ import requests
 import sounddevice as sd
 import soundfile as sf
 from faster_whisper import WhisperModel
-import pyglet
 
 
 # ---------------- 配置 ----------------
-# 直接加载字体文件（跨平台）
-pyglet.font.add_file("./fonts/simhei.ttf")
 # 请确认 models/ 下的 Whisper 模型目录名称；如名称不同，请修改此行。
 STT_MODEL_SIZE = r"models/faster-whisper-base"
 # 注意：这里填入你在 llama-server 中加载的模型名称（或者简单的 "gemma"）
@@ -42,7 +83,6 @@ TTS_VOICE = "en-US-JennyNeural"
 
 INPUT_AUDIO = "test_audio.wav"
 # MP3 文件固定保存在 Python 程序所在目录
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_AUDIO = os.path.join(BASE_DIR, "output_response.mp3")
 
 SAMPLE_RATE = 16000
@@ -60,6 +100,24 @@ read -p "按回车键关闭此窗口..." _
 
 
 stt_model = None
+
+
+def get_tk_font_family(root, preferred_names=("SimHei",)):
+    """获取 Tk 实际可用的字体族名称，优先匹配本地/系统中的目标字体。"""
+    available = list(tkfont.families(root))
+    available_lower = {name.lower(): name for name in available}
+
+    for target in preferred_names:
+        if target in available:
+            return target
+        if target.lower() in available_lower:
+            return available_lower[target.lower()]
+
+    for name in available:
+        if any(k in name.lower() for k in ("simhei", "cjk", "wqy", "noto", "hei", "song")):
+            return name
+
+    return "TkDefaultFont"
 
 
 def speech_to_text(audio_path):
@@ -152,8 +210,9 @@ def extract_english_for_tts(text):
 
 
 class EnglishTalkingApp:
-    def __init__(self, root):
+    def __init__(self, root, font_family="SimHei"):
         self.root = root
+        self.ui_font = font_family
         self.root.title("English Talking - 英语口语练习")
         self.root.geometry("900x720")
         self.root.minsize(680, 520)
@@ -171,40 +230,40 @@ class EnglishTalkingApp:
 
         top = tk.Frame(root, padx=12, pady=10)
         top.pack(fill="x")
-        tk.Label(top, text="英语口语练习", font=("SimHei", 16)).pack(side="left")
+        tk.Label(top, text="英语口语练习", font=(self.ui_font, 16)).pack(side="left")
         self.start_server_button = tk.Button(
-            top, text="开启 llama-server 服务", command=self.start_llama_server
+            top, text="开启 llama-server 服务", font=(self.ui_font, 10), command=self.start_llama_server
         )
         self.start_server_button.pack(side="left", padx=(20, 6))
         self.server_status_var = tk.StringVar(value="服务器：未由本界面启动")
-        tk.Label(top, textvariable=self.server_status_var, anchor="w").pack(side="left", padx=6)
+        tk.Label(top, textvariable=self.server_status_var, font=(self.ui_font, 10), anchor="w").pack(side="left", padx=6)
 
         self.status_var = tk.StringVar(value="正在初始化界面...")
-        tk.Label(root, textvariable=self.status_var, anchor="w", padx=12).pack(fill="x")
+        tk.Label(root, textvariable=self.status_var, font=(self.ui_font, 10), anchor="w", padx=12).pack(fill="x")
 
         self.chat = scrolledtext.ScrolledText(
-            root, wrap="word", font=("SimHei", 11), state="disabled"
+            root, wrap="word", font=(self.ui_font, 11), state="disabled"
         )
         self.chat.pack(fill="both", expand=True, padx=12, pady=8)
-        self.chat.tag_config("user_label", foreground="#1769aa", font=("SimHei", 10))
-        self.chat.tag_config("assistant_label", foreground="#16803c", font=("SimHei", 10))
-        self.chat.tag_config("error", foreground="#c62828")
-        self.chat.tag_config("translation", foreground="#777777")
+        self.chat.tag_config("user_label", foreground="#1769aa", font=(self.ui_font, 10))
+        self.chat.tag_config("assistant_label", foreground="#16803c", font=(self.ui_font, 10))
+        self.chat.tag_config("error", foreground="#c62828", font=(self.ui_font, 10))
+        self.chat.tag_config("translation", foreground="#777777", font=(self.ui_font, 10))
 
         controls = tk.Frame(root, padx=12, pady=8)
         controls.pack(fill="x")
         # 开始录音 按钮
         self.record_button = tk.Button(
-            controls, text="🎙 开始录音", font=("SimHei", 12),
+            controls, text="🎙 开始录音", font=(self.ui_font, 12),
             height=2, width=18, command=self.toggle_recording, state="disabled"
         )
         self.record_button.pack(side="left")
-       # 重播纠错 按钮
+        # 重播纠错 按钮
         self.replay_button = tk.Button(
             controls,
             text="🔊 重播纠错",
             command=self.replay_response,
-            font=("SimHei", 10)
+            font=(self.ui_font, 10)
         )
         self.replay_button.pack(side="left", padx=8)
         # 清空对话 按钮
@@ -212,18 +271,19 @@ class EnglishTalkingApp:
             controls,
             text="清空对话",
             command=self.clear_chat,
-            font=("SimHei", 10)
+            font=(self.ui_font, 10)
         ).pack(side="left", padx=8)
         # 重置对话上下文 按钮
         tk.Button(
             controls,
             text="重置对话上下文",
             command=self.reset_history,
-            font=("SimHei", 10)
+            font=(self.ui_font, 10)
         ).pack(side="left")
         tk.Label(
             controls,
             text="点击开始录音，再次点击结束；处理完成并播放后可继续下一轮。",
+            font=(self.ui_font, 10),
             anchor="w", justify="left", wraplength=390,
         ).pack(side="left", padx=12)
 
@@ -237,7 +297,7 @@ class EnglishTalkingApp:
         self.chat.insert("end", f"{text}\n\n")
         self.chat.configure(state="disabled")
         self.chat.see("end")
-    
+
     def replay_response(self):
         """重播上一次 AI 英语纠错语音"""
         if self.busy or self.recording or self.replaying:
@@ -410,9 +470,6 @@ class EnglishTalkingApp:
         if not command or not command.strip():
             return
         try:
-            # ===== Ubuntu：用系统图形终端弹出独立 shell 窗口 =====
-            # (终端名, 参数前缀)；gnome-terminal 等需要 "--" 分隔选项与命令
-            
             terminals = [
                 ("gnome-terminal",      ["--", "bash"]),
                 ("konsole",             ["-e", "bash"]),
@@ -420,7 +477,6 @@ class EnglishTalkingApp:
                 ("mate-terminal",       ["--", "bash"]),
                 ("tilix",               ["-e", "bash"]),
                 ("lxterminal",          ["-e", "bash"]),
-                ("konsole",             ["-e", "bash"]),
                 ("xterm",               ["-e", "bash"]),
             ]
             launched = False
@@ -439,9 +495,8 @@ class EnglishTalkingApp:
                     launched = True
                     break
                 except FileNotFoundError:
-                    continue          # 该终端不存在，继续找下一个
+                    continue
             if not launched:
-                # 完全没有图形终端时，退而求其次：后台无窗口运行
                 self.llama_process = subprocess.Popen(
                     ["bash", "-c", command],
                     cwd=os.getcwd(),
@@ -488,16 +543,19 @@ class EnglishTalkingApp:
                 self.audio_stream.close()
             except Exception:
                 pass
-        # 不自动终止 llama-server，以免误杀用户本来需要继续使用的服务。
         self.root.destroy()
 
 
 def main():
     root = tk.Tk()
-    # askstring 位于 tkinter.simpledialog
+    ui_font = get_tk_font_family(root, preferred_names=("SimHei",))
     import tkinter.simpledialog
-    app = EnglishTalkingApp(root)
-    root.mainloop()
+    app = EnglishTalkingApp(root, font_family=ui_font)
+    try:
+        root.mainloop()
+    finally:
+        if _TK_FONT_TMP_DIR and os.path.isdir(_TK_FONT_TMP_DIR):
+            shutil.rmtree(_TK_FONT_TMP_DIR, ignore_errors=True)
 
 
 if __name__ == "__main__":
