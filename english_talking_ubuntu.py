@@ -104,7 +104,7 @@ sh ./1-llama_ubuntu.sh
 stt_model = None
 
 
-def get_tk_font_family(root, preferred_names=("SimHei",)):
+def get_tk_font_family(root, preferred_names=("Microsoft Yahei UI",)):
     """获取 Tk 实际可用的字体族名称，优先匹配本地/系统中的目标字体。"""
     available = list(tkfont.families(root))
     available_lower = {name.lower(): name for name in available}
