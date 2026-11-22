@@ -25,12 +25,9 @@ import requests
 import sounddevice as sd
 import soundfile as sf
 from faster_whisper import WhisperModel
-import pyglet
 
 
 # ---------------- 配置 ----------------
-# 直接加载字体文件（跨平台）
-pyglet.font.add_file("./fonts/simhei.ttf")
 # 请确认 models/ 下的 Whisper 模型目录名称；如名称不同，请修改此行。
 STT_MODEL_SIZE = r"models/faster-whisper-base"
 # 注意：这里填入你在 llama-server 中加载的模型名称（或者简单的 "gemma"）
@@ -54,7 +51,6 @@ AUDIO_DTYPE = "int16"
 # 留空时，点击“启动 llama-server”会弹出输入框，你可以临时填写完整命令。
 LLAMA_SERVER_COMMAND = r"""
 echo 使用方法: 启动 1-llama_win.cmd ，并保持命令窗口运行直至程序运行结束
-cd
 pause
 """.strip()
 
@@ -171,7 +167,7 @@ class EnglishTalkingApp:
 
         top = tk.Frame(root, padx=12, pady=10)
         top.pack(fill="x")
-        tk.Label(top, text="英语口语练习", font=("SimHei", 16)).pack(side="left")
+        tk.Label(top, text="英语口语练习", font=("Microsoft YaHei UI", 16)).pack(side="left")
         self.start_server_button = tk.Button(
             top, text="开启 llama-server 服务", command=self.start_llama_server
         )
@@ -183,11 +179,11 @@ class EnglishTalkingApp:
         tk.Label(root, textvariable=self.status_var, anchor="w", padx=12).pack(fill="x")
 
         self.chat = scrolledtext.ScrolledText(
-            root, wrap="word", font=("SimHei", 11), state="disabled"
+            root, wrap="word", font=("Microsoft YaHei UI", 11), state="disabled"
         )
         self.chat.pack(fill="both", expand=True, padx=12, pady=8)
-        self.chat.tag_config("user_label", foreground="#1769aa", font=("SimHei", 10))
-        self.chat.tag_config("assistant_label", foreground="#16803c", font=("SimHei", 10))
+        self.chat.tag_config("user_label", foreground="#1769aa", font=("Microsoft YaHei UI", 10))
+        self.chat.tag_config("assistant_label", foreground="#16803c", font=("Microsoft YaHei UI", 10))
         self.chat.tag_config("error", foreground="#c62828")
         self.chat.tag_config("translation", foreground="#777777")
 
@@ -195,7 +191,7 @@ class EnglishTalkingApp:
         controls.pack(fill="x")
         # 开始录音 按钮
         self.record_button = tk.Button(
-            controls, text="🎙 开始录音", font=("SimHei", 12),
+            controls, text="🎙 开始录音", font=("Microsoft YaHei UI", 12),
             height=2, width=18, command=self.toggle_recording, state="disabled"
         )
         self.record_button.pack(side="left")
@@ -204,7 +200,7 @@ class EnglishTalkingApp:
             controls,
             text="🔊 重播纠错",
             command=self.replay_response,
-            font=("SimHei", 10)
+            font=("Microsoft YaHei UI", 10)
         )
         self.replay_button.pack(side="left", padx=8)
         # 清空对话 按钮
@@ -212,14 +208,14 @@ class EnglishTalkingApp:
             controls,
             text="清空对话",
             command=self.clear_chat,
-            font=("SimHei", 10)
+            font=("Microsoft YaHei UI", 10)
         ).pack(side="left", padx=8)
         # 重置对话上下文 按钮
         tk.Button(
             controls,
             text="重置对话上下文",
             command=self.reset_history,
-            font=("SimHei", 10)
+            font=("Microsoft YaHei UI", 10)
         ).pack(side="left")
         tk.Label(
             controls,
