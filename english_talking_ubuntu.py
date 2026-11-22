@@ -1,6 +1,7 @@
 import asyncio
 import os
 import queue
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -10,6 +11,7 @@ import time
 # ===== 在导入 tkinter 之前注入本地 fonts/ 目录到 Fontconfig =====
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FONTS_DIR = os.path.join(BASE_DIR, "fonts")
+
 
 def setup_local_fonts_for_tk(fonts_dir: str):
     """为当前进程创建临时 Fontconfig 配置，使 Tk 能够扫描项目本地 fonts/ 下的字体文件。"""
@@ -47,7 +49,7 @@ _TK_FONT_TMP_DIR = setup_local_fonts_for_tk(FONTS_DIR)
 
 import tkinter as tk
 import tkinter.font as tkfont
-from tkinter import messagebox, scrolledtext, filedialog
+from tkinter import messagebox, scrolledtext, filedialog, simpledialog
 
 # ===== PyAV 19.0.2 兼容性修复 =====
 import av
@@ -460,53 +462,63 @@ class EnglishTalkingApp:
             messagebox.showinfo("llama-server", "本程序启动的 llama-server 仍在运行。")
             return
         command = LLAMA_SERVER_COMMAND
-        if not command or all(line.strip().startswith("#") or not line.strip()
-                            for line in command.splitlines()):
-            command = tk.simpledialog.askstring(
+        if not command or all(
+            line.strip().startswith("#") or not line.strip()
+            for line in command.splitlines()
+        ):
+            command = simpledialog.askstring(
                 "启动 llama-server",
                 "请输入完整启动命令（例如 ./llama-server --model xxx.gguf）：",
                 parent=self.root,
             )
         if not command or not command.strip():
             return
+
+        wrapped_cmd = f"{command}\necho '--- 命令已结束，按回车关闭窗口 ---'\nread -r _"
+        child_env = os.environ.copy()
+        child_env.pop("FONTCONFIG_FILE", None)
+
+        terminal_builders = [
+            ("ptyxis", lambda c: ["ptyxis", "--", "bash", "-c", c]),
+            ("gnome-terminal", lambda c: ["gnome-terminal", "--", "bash", "-c", c]),
+            ("kgx", lambda c: ["kgx", "--", "bash", "-c", c]),
+            ("xfce4-terminal", lambda c: ["xfce4-terminal", "-e", f"bash -c {shlex.quote(c)}"]),
+            ("tilix", lambda c: ["tilix", "-e", f"bash -c {shlex.quote(c)}"]),
+            ("konsole", lambda c: ["konsole", "-e", "bash", "-c", c]),
+            ("xterm", lambda c: ["xterm", "-e", "bash", "-c", c]),
+        ]
+
         try:
-            terminals = [
-                ("gnome-terminal",      ["--", "bash"]),
-                ("konsole",             ["-e", "bash"]),
-                ("xfce4-terminal",      ["-e", "bash"]),
-                ("mate-terminal",       ["--", "bash"]),
-                ("tilix",               ["-e", "bash"]),
-                ("lxterminal",          ["-e", "bash"]),
-                ("xterm",               ["-e", "bash"]),
-            ]
             launched = False
-            for term, flags in terminals:
-                try:
-                    if term == "xterm":
-                        self.llama_process = subprocess.Popen(
-                            ["xterm", "-e", "bash", "-c", command],
-                            cwd=os.getcwd(),
-                        )
-                    else:
-                        self.llama_process = subprocess.Popen(
-                            [term, "--", "bash", "-c", command],
-                            cwd=os.getcwd(),
-                        )
-                    launched = True
-                    break
-                except FileNotFoundError:
+            for term_name, builder in terminal_builders:
+                if shutil.which(term_name) is None:
                     continue
+                self.llama_process = subprocess.Popen(
+                    builder(wrapped_cmd),
+                    cwd=BASE_DIR,
+                    env=child_env,
+                )
+                launched = True
+                break
+
             if not launched:
+                log_path = os.path.join(BASE_DIR, "llama_server.log")
+                log_file = open(log_path, "a", encoding="utf-8")
                 self.llama_process = subprocess.Popen(
                     ["bash", "-c", command],
-                    cwd=os.getcwd(),
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    cwd=BASE_DIR,
+                    env=child_env,
+                    stdout=log_file,
+                    stderr=subprocess.STDOUT,
                 )
+                self.server_status_var.set("服务器：已后台启动（无图形终端）")
+                self.set_status(f"未检测到图形终端，已后台启动，日志见 {log_path}")
+                return
+
             self.server_status_var.set("服务器：已请求启动（请查看新开的终端窗口）")
             self.set_status("已打开 llama-server 终端窗口；请确认模型加载完成后再开始对话。")
         except Exception as exc:
-            messagebox.showerror("启动失败", str(exc))
+            messagebox.showerror("启动失败", f"{type(exc).__name__}: {exc}")
 
     def poll_events(self):
         try:
@@ -549,7 +561,6 @@ class EnglishTalkingApp:
 def main():
     root = tk.Tk()
     ui_font = get_tk_font_family(root, preferred_names=("SimHei",))
-    import tkinter.simpledialog
     app = EnglishTalkingApp(root, font_family=ui_font)
     try:
         root.mainloop()
