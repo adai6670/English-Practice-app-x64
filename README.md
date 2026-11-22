@@ -32,7 +32,7 @@ deactivate
 *原始系统缺少 PortAudio 底层库‌，sounddevice 是 Python 封装，它依赖系统级的 PortAudio 动态库才能工作，光 pip install sounddevice 包是不够的，需安装：sudo apt install portaudio19-dev*  
 ##如果 pip 安装不上 pygame  
 *需要补齐：sudo apt install python3-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libfreetype6-dev libportmidi-dev libjpeg-dev libpng-dev build-essential*  
-##文件夹 fonts 及 msyh.ttc 字体，主要用于在ubuntu下，程序界面中文字体出现 口口 问题，程序内通过调用实现显示，亦可切换为微软雅黑字体  
+##文件夹 fonts 及 msyh.ttc 字体，主要用于在ubuntu下，程序界面中文字体出现 口口 问题，程序内通过调用实现显示，亦可切换其他中文字体  
   
 使用命令安装运行库：uv pip install av faster-whisper edge-tts requests sounddevice soundfile pygame  
 或者使用命令：uv pip install -r requirements.txt  
